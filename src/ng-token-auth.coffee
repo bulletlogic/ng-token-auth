@@ -29,13 +29,19 @@ angular.module('ng-token-auth', ['ipCookie'])
           expiry:         "{{ expiry }}"
           uid:            "{{ uid }}"
 
+        mapHeaders: (user) ->
+          token: user.accessToken
+          clientId: null
+          uid: user.id
+          expiry: user.expiresIn
+
         parseExpiry: (headers) ->
           # convert from ruby time (seconds) to js time (millis)
           (parseInt(headers['expiry'], 10) * 1000) || null
 
-        handleLoginResponse:           (resp) -> resp.data
-        handleAccountUpdateResponse:   (resp) -> resp.data
-        handleTokenValidationResponse: (resp) -> resp.data
+        handleLoginResponse:           (resp) -> resp
+        handleAccountUpdateResponse:   (resp) -> resp
+        handleTokenValidationResponse: (resp) -> resp
 
         authProviderPaths:
           github:    '/auth/github'
@@ -561,7 +567,7 @@ angular.module('ng-token-auth', ['ipCookie'])
 
 
           # handle successful authentication
-          handleValidAuth: (user, setHeader=false) ->
+          handleValidAuth: (user, setHeader = true) ->
             # cancel any pending postMessage checks
             $timeout.cancel(@t) if @t?
 
@@ -574,12 +580,7 @@ angular.module('ng-token-auth', ['ipCookie'])
 
             # postMessage will not contain header. must save headers manually.
             if setHeader
-              @setAuthHeaders(@buildAuthHeaders({
-                token:    @user.auth_token
-                clientId: @user.client_id
-                uid:      @user.uid
-                expiry:   @user.expiry
-              }))
+              @setAuthHeaders(@buildAuthHeaders(@getConfig().mapHeaders(@user)))
 
             # fulfill promise
             @resolveDfd()

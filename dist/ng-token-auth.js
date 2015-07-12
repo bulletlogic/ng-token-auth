@@ -35,17 +35,25 @@ angular.module('ng-token-auth', ['ipCookie']).provider('$auth', function() {
         expiry: "{{ expiry }}",
         uid: "{{ uid }}"
       },
+      mapHeaders: function(user) {
+        return {
+          token: user.accessToken,
+          clientId: null,
+          uid: user.id,
+          expiry: user.expiresIn
+        };
+      },
       parseExpiry: function(headers) {
         return (parseInt(headers['expiry'], 10) * 1000) || null;
       },
       handleLoginResponse: function(resp) {
-        return resp.data;
+        return resp;
       },
       handleAccountUpdateResponse: function(resp) {
-        return resp.data;
+        return resp;
       },
       handleTokenValidationResponse: function(resp) {
-        return resp.data;
+        return resp;
       },
       authProviderPaths: {
         github: '/auth/github',
@@ -494,7 +502,7 @@ angular.module('ng-token-auth', ['ipCookie']).provider('$auth', function() {
             },
             handleValidAuth: function(user, setHeader) {
               if (setHeader == null) {
-                setHeader = false;
+                setHeader = true;
               }
               if (this.t != null) {
                 $timeout.cancel(this.t);
@@ -503,12 +511,7 @@ angular.module('ng-token-auth', ['ipCookie']).provider('$auth', function() {
               this.user.signedIn = true;
               this.user.configName = this.getCurrentConfigName();
               if (setHeader) {
-                this.setAuthHeaders(this.buildAuthHeaders({
-                  token: this.user.auth_token,
-                  clientId: this.user.client_id,
-                  uid: this.user.uid,
-                  expiry: this.user.expiry
-                }));
+                this.setAuthHeaders(this.buildAuthHeaders(this.getConfig().mapHeaders(this.user)));
               }
               return this.resolveDfd();
             },
